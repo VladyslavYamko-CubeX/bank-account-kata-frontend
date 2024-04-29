@@ -1,4 +1,3 @@
-// src/components/BankAccount.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -7,20 +6,11 @@ import {
   Button,
   FormControl,
   FormControlLabel,
-  MenuItem,
-  Paper,
   Radio,
   RadioGroup,
-  Select,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableSortLabel,
   TextField,
 } from "@mui/material";
+import TransactionsTable from "@/components/Table";
 
 const BankAccount = () => {
   const [statement, setStatement] = useState([]);
@@ -28,15 +18,21 @@ const BankAccount = () => {
   const [iban, setIban] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [actionType, setActionType] = useState("deposit");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const handleActionChange = (event) => {
     setActionType(event.target.value);
   };
 
-  const fetchStatement = useCallback(async () => {
-    const response = await apiService.getStatement(sortOrder);
-    setStatement(response.data);
-  }, [sortOrder]);
+  const fetchStatement = useCallback(
+    async (page?: number) => {
+      const response = await apiService.getStatement(sortOrder, page);
+      setStatement(response.data.transactions);
+      setTotalPages(response.data.totalPages);
+    },
+    [sortOrder]
+  );
 
   const handleDeposit = async () => {
     await apiService.deposit(amount);
@@ -52,46 +48,23 @@ const BankAccount = () => {
     await apiService.transfer(iban, amount);
     fetchStatement();
   };
-  useEffect(() => {
-    fetchStatement();
-  }, [fetchStatement]);
 
-  const handleSort = () => {
-    setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-  };
+  useEffect(() => {
+    fetchStatement(currentPage);
+  }, [fetchStatement, currentPage]);
 
   return (
     <div>
       <h2>Account Statement</h2>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>
-                <TableSortLabel
-                  active
-                  direction={sortOrder as "asc" | "desc"}
-                  onClick={handleSort}
-                >
-                  Date
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>Amount</TableCell>
-              <TableCell>Balance</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {statement.map((item, index) => (
-              <TableRow key={index}>
-                <TableCell>{item.date}</TableCell>
-                <TableCell>${item.amount}</TableCell>
-                <TableCell>${item.balance}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <TransactionsTable
+        data={statement}
+        sortOrder={sortOrder}
+        setSortOrder={setSortOrder}
+        setCurrentPage={setCurrentPage}
+        currentPage={currentPage}
+        totalPages={totalPages}
+      />
       <div>
         <FormControl component="fieldset">
           <RadioGroup
