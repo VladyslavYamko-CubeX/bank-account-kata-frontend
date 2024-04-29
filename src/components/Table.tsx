@@ -31,8 +31,6 @@ export default function TransactionsTable({
     setCurrentPage(newPage);
   };
 
-  console.log("data:", data);
-
   return (
     <Box>
       <TableContainer component={Paper}>
